@@ -1,0 +1,36 @@
+services:
+  server:
+    build: .
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./data:/app/data
+    environment:
+      DB_PATH: /app/data/readings.db
+
+  # Two stand in sensors so the project can be demoed without any Pis.
+  # They only start with the demo profile:
+  #   docker compose --profile demo up
+  sensor-a:
+    build: .
+    profiles: ["demo"]
+    depends_on:
+      - server
+    command: ["python", "pi/fake_sensor.py"]
+    environment:
+      SERVER_URL: http://server:5001/api/reading
+      SENSOR_ID: A
+
+  sensor-b:
+    build: .
+    profiles: ["demo"]
+    depends_on:
+      - server
+    command: ["python", "pi/fake_sensor.py"]
+    environment:
+      SERVER_URL: http://server:5001/api/reading
+      SENSOR_ID: B
+      # Arrives late and slightly warm, which is what the synchronizer
+      # and the fault detection are there to deal with.
+      JITTER: "0.4"
+      OFFSET_C: "0.5"

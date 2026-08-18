@@ -1,0 +1,248 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #eff1f5;
+    color: #4c4f69;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#topbar {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    background: #e6e9ef;
+    border-bottom: 1px solid #ccd0da;
+    height: 48px;
+}
+
+#topbar h1 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #4c4f69;
+    letter-spacing: 0.5px;
+}
+
+#layout {
+    display: flex;
+    height: calc(100vh - 48px);
+}
+
+#sidebar {
+    width: 33.33%;
+    background: #e6e9ef;
+    border-right: 1px solid #ccd0da;
+    display: flex;
+    flex-direction: column;
+}
+
+#panel-top {
+    height: 50%;
+    border-bottom: 1px solid #ccd0da;
+    padding: 16px;
+}
+
+#panel-bottom {
+    height: 25%;
+    border-bottom: 1px solid #ccd0da;
+    padding: 16px;
+}
+
+#panel-key {
+    height: 25%;
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.panel-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #8c8fa1;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 14px;
+}
+
+.sensor-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: #4c4f69;
+    margin-bottom: 10px;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #9ca0b0;
+}
+
+.status-dot.online {
+    background: #40a02b;
+    box-shadow: 0 0 6px #40a02b88;
+}
+
+.status-dot.warning {
+    background: #df8e1d;
+    box-shadow: 0 0 6px #df8e1d88;
+}
+
+.status-dot.fault {
+    background: #d20f39;
+    box-shadow: 0 0 6px #d20f3988;
+}
+
+.fault-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #4c4f69;
+    margin-bottom: 10px;
+}
+
+.fault-key {
+    color: #6c6f85;
+}
+
+.fault-val {
+    font-weight: 600;
+    color: #4c4f69;
+}
+
+.fault-input-wrap {
+    font-size: 13px;
+    font-weight: 600;
+    color: #4c4f69;
+}
+
+.fault-input-wrap input {
+    width: 50px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #4c4f69;
+    background: #eff1f5;
+    border: 1px solid #ccd0da;
+    border-radius: 4px;
+    padding: 2px 4px;
+    text-align: right;
+}
+
+.key-item {
+    margin-bottom: 10px;
+}
+
+.key-term {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: #4c4f69;
+    margin-bottom: 2px;
+}
+
+.key-desc {
+    display: block;
+    font-size: 11px;
+    color: #8c8fa1;
+    line-height: 1.4;
+}
+
+.key-desc .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    vertical-align: middle;
+}
+
+#chart-area {
+    width: 66.66%;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+/* Timestamp on the left, tabs centered in the chart area. The spacer is
+   the same flex width as the timestamp so the tabs stay centered. */
+#chart-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+#timestamp {
+    flex: 1;
+    font-size: 14px;
+    color: #6c6f85;
+}
+
+#chart-header-spacer {
+    flex: 1;
+}
+
+#tabs {
+    display: flex;
+    gap: 2px;
+    background: #e6e9ef;
+    border: 1px solid #ccd0da;
+    border-radius: 6px;
+    padding: 2px;
+}
+
+.tab {
+    font-family: inherit;
+    font-size: 13px;
+    color: #8c8fa1;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 12px;
+    cursor: pointer;
+}
+
+.tab:hover {
+    color: #6c6f85;
+}
+
+.tab.active {
+    background: #eff1f5;
+    color: #4c4f69;
+    font-weight: 600;
+}
+
+#chart-box {
+    flex: 1;
+    background: #e6e9ef;
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #ccd0da;
+    position: relative;
+}
+
+/* One slot per tab, both filling the chart box. Only the active tab's
+   slot is visible. */
+.chart-slot {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+}
+
+.chart-slot canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Tab visibility. The <body> carries either tab-simulation or tab-live
+   and every tab specific element is tagged sim-only or live-only. */
+body.tab-simulation .live-only,
+body.tab-live .sim-only {
+    display: none;
+}

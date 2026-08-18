@@ -1,0 +1,9 @@
+[project]
+name = "fault-detection-sensor"
+version = "3.0.0"
+description = "DHT22 sensor script that runs on the Raspberry Pi"
+requires-python = ">=3.9"
+dependencies = [
+    "adafruit-circuitpython-dht>=4.0.0",
+    "requests>=2.32.0",
+]

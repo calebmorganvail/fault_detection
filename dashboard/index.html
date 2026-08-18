@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Temp Monitor</title>
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body class="tab-simulation">
+        <header id="topbar">
+            <h1>Temperature Sensor Fault Detection</h1>
+        </header>
+        <div id="layout">
+            <aside id="sidebar">
+                <div id="panel-top">
+                    <h2 class="panel-label">Connected Sensors</h2>
+                    <div class="sensor-row sim-only">
+                        <span class="status-dot" id="dot-sim"></span>
+                        <span>DHT22 Sensor</span>
+                    </div>
+                    <div class="sensor-row live-only">
+                        <span class="status-dot" id="dot-a"></span>
+                        <span>DHT22 Sensor (A)</span>
+                    </div>
+                    <div class="sensor-row live-only">
+                        <span class="status-dot" id="dot-b"></span>
+                        <span>DHT22 Sensor (B)</span>
+                    </div>
+                </div>
+                <div id="panel-bottom">
+                    <h2 class="panel-label sim-only">
+                        Simulation Fault Detection
+                    </h2>
+                    <h2 class="panel-label live-only">Fault Detection</h2>
+                    <div class="fault-row sim-only">
+                        <span class="fault-key">DHT22 Sensor °F:</span>
+                        <span class="fault-val" id="sim-sensor-temp">--</span>
+                    </div>
+                    <div class="fault-row sim-only">
+                        <span class="fault-key">Simulated Temperature °F:</span>
+                        <span class="fault-val" id="sim-baseline-temp">--</span>
+                    </div>
+                    <div class="fault-row live-only">
+                        <span class="fault-key">DHT22 Sensor (A) °F:</span>
+                        <span class="fault-val" id="live-temp-a">--</span>
+                    </div>
+                    <div class="fault-row live-only">
+                        <span class="fault-key">DHT22 Sensor (B) °F:</span>
+                        <span class="fault-val" id="live-temp-b">--</span>
+                    </div>
+                    <div class="fault-row">
+                        <span class="fault-key">Absolute Divergence:</span>
+                        <span class="fault-val" id="fault-divergence">--</span>
+                    </div>
+                    <div class="fault-row">
+                        <span class="fault-key"
+                            >Threshold Fault Detection:</span
+                        >
+                        <span class="status-dot" id="dot-fault"></span>
+                    </div>
+                    <div class="fault-row">
+                        <span class="fault-key">Threshold:</span>
+                        <span class="fault-input-wrap"
+                            ><input
+                                type="number"
+                                id="fault-threshold"
+                                value="5"
+                                step="0.1"
+                            />°F</span
+                        >
+                    </div>
+                    <div class="fault-row sim-only">
+                        <span class="fault-key">Simulated Temperature:</span>
+                        <span class="fault-input-wrap"
+                            ><input
+                                type="number"
+                                id="sim-temp"
+                                value="70.0"
+                                step="0.1"
+                            />°F</span
+                        >
+                    </div>
+                </div>
+                <div id="panel-key">
+                    <h2 class="panel-label">Key</h2>
+                    <div class="key-item">
+                        <span class="key-term">Absolute Divergence</span>
+                        <span class="key-desc"
+                            >The difference in °F between the sensor reading and
+                            simulated temperature at the current
+                            timestamp.</span
+                        >
+                    </div>
+                    <div class="key-item">
+                        <span class="key-term">Threshold Fault Detection</span>
+                        <span class="key-desc"
+                            ><span class="status-dot online"></span> Green:
+                            divergence under 2°F.
+                            <span class="status-dot warning"></span> Yellow:
+                            divergence exceeds 2°F.
+                            <span class="status-dot fault"></span> Red: the
+                            sliding window average (last 30 readings) exceeds
+                            the threshold.</span
+                        >
+                    </div>
+                    <div class="key-item">
+                        <span class="key-term">Threshold</span>
+                        <span class="key-desc"
+                            >The °F limit for the sliding window average. If the
+                            average divergence over the last 30 readings exceeds
+                            this value, a fault is triggered. Editable in real
+                            time.</span
+                        >
+                    </div>
+                    <div class="key-item">
+                        <span class="key-term">Simulated Temperature</span>
+                        <span class="key-desc"
+                            >The baseline temperature used as the second data
+                            source. Editable in real time to test fault
+                            detection at different divergence levels.</span
+                        >
+                    </div>
+                </div>
+            </aside>
+            <section id="chart-area">
+                <div id="chart-header">
+                    <div id="timestamp">Timestamp: --</div>
+                    <div id="tabs">
+                        <button class="tab active" data-tab="simulation">
+                            Simulation
+                        </button>
+                        <button class="tab" data-tab="live">
+                            Multiple Live Sensors
+                        </button>
+                    </div>
+                    <div id="chart-header-spacer"></div>
+                </div>
+                <div id="chart-box">
+                    <div class="chart-slot sim-only">
+                        <canvas id="sim-chart"></canvas>
+                    </div>
+                    <div class="chart-slot live-only">
+                        <canvas id="live-chart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+        <script src="app.js"></script>
+    </body>
+</html>
