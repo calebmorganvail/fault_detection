@@ -1,42 +1,20 @@
 # Temperature Sensor Fault Detection
 
-Real-time dashboard that detects faulty DHT22 temperature sensors two
-different ways:
+Real-time dashboard that detects faulty DHT22 temperature readings.
+
+Usecase: 
+Testing 1-2 DHT22 sensors for accurate readings
 
 - **Simulation** — compares one sensor against an adjustable simulated
   baseline, so a fault can be triggered on demand without touching the
   hardware.
+
 - **Multiple Live Sensors** — compares two Raspberry Pis against each
   other, using server side synchronization so the two streams are always
-  compared at the same moment in time.
+  compared at the same moment in time. The idea here is that if both pis are placed in the same room and are supposed to be reading the same temp
+the divergence of the two sensors can be deteceted beyond a certain threshold.
 
-This is version 3 of a project built across two classes:
 
-| Version           | Class            | What it did                                     |
-| ----------------- | ---------------- | ----------------------------------------------- |
-| `temp_monitor`    | Operating Systems| Two Pis, live line chart, fault detection       |
-| `temp_monitor_v2` | Web Development  | One Pi vs a simulated baseline, redesigned UI   |
-| `fault_detection` | —                | Both of the above, plus the synchronization fix |
-
-## The synchronization fix
-
-v1 had a bug that got flagged during the class demo. Each Pi POSTed on
-its own schedule and the server appended every reading to one shared
-list. The dashboard then took "the last two readings" and treated them
-as a pair. The two Pis were never in lockstep, so network jitter meant
-the dashboard regularly compared an A reading against a B reading from a
-different moment, which showed up as divergence spikes that were not
-real.
-
-v3 fixes this in `server/sync.py`. Readings go into a buffer keyed by a
-one second time bucket, and a bucket is only released to the dashboard
-once both sensors have reported for it. The dashboard never sees a
-mismatched pair. A bucket whose partner never arrives is dropped after 3
-seconds so one disconnected sensor cannot stall the chart.
-
-The tradeoff: readings that straddle a bucket boundary get dropped
-instead of paired. `/api/status` reports `synced_count` and
-`dropped_count` so the ratio is visible while it runs.
 
 ## Architecture
 
@@ -48,7 +26,7 @@ Pi B ─┘
 
 ```
 fault_detection/
-├── dashboard/            Frontend (HTML, CSS, vanilla JS)
+├── dashboard/            Frontend (HTML, CSS, JS)
 │   ├── index.html
 │   ├── style.css
 │   └── app.js
@@ -96,14 +74,6 @@ The threshold and the simulated baseline are editable in real time.
 **Tooling** — uv, Docker, pytest
 
 **Hardware** — 2x Raspberry Pi 4B, 2x DHT22 sensors, 1x laptop
-
-### What changed from v2
-
-- `pip` → `uv`
-- Readings in memory → SQLite
-- Runs bare → runs in Docker
-- One sensor → tabbed interface with two live sensors
-- No synchronization → timestamp bucket synchronizer
 
 ## Setup
 
@@ -166,10 +136,6 @@ Use `SENSOR_ID=B` on the second Pi.
 uv run --group dev pytest
 ```
 
-Covers the synchronizer (bucketing, timeouts, the exact mismatch v1 got
-wrong), the SQLite layer, and the API end to end.
+Covers the synchronizer, the SQLite layer, and the API end to end.
 
 ## Demo walkthrough
-
-<!-- DEMO VIDEO -->
-
