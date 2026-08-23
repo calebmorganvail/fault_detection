@@ -7,12 +7,16 @@ measurements, not just a green tick. Two cases are measured:
     drifted   the same fixture with device B 4C out of calibration,
               expected to fail
 
-If either case comes out the wrong way round the acceptance criteria are
-not measuring anything, so this script exits non zero and the CI job
-fails with it.
+If both come out the same way the acceptance criteria are not measuring
+anything, so this script exits non zero and the CI job fails with it.
 
     python scripts/acceptance_report.py
     python scripts/acceptance_report.py >> "$GITHUB_STEP_SUMMARY"
+
+The project imports live inside load_project() rather than at the top of
+the file. They only work once server/ and tests/ are on the path, and an
+editor that sorts imports to the top of a file would otherwise quietly
+break this script.
 """
 
 import contextlib
@@ -22,13 +26,21 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(ROOT, "server"))
-sys.path.insert(0, os.path.join(ROOT, "tests"))
 
-import acceptance  # noqa: E402
-import db  # noqa: E402
-import devices  # noqa: E402
-import server  # noqa: E402
+
+def load_project():
+    """Put server/ and tests/ on the path and hand back the modules."""
+    for folder in ("server", "tests"):
+        path = os.path.join(ROOT, folder)
+        if path not in sys.path:
+            sys.path.insert(0, path)
+
+    import acceptance
+    import db
+    import devices
+    import server
+
+    return acceptance, db, devices, server
 
 
 class Patch:
@@ -38,8 +50,10 @@ class Patch:
         setattr(obj, name, value)
 
 
-def run_case(device_b, cycles=90):
+def run_case(project, device_b, cycles=90):
     """Run one bench against a throwaway database and report both streams."""
+    acceptance, db, devices, server = project
+
     db.DB_PATH = os.path.join(tempfile.mkdtemp(), "acceptance.db")
     db.init_db()
 
@@ -57,7 +71,7 @@ def run_case(device_b, cycles=90):
         ).run(cycles)
 
         # The configured limit is what gets reported. The default limit
-        # is what the discrimination check below is measured against, so
+        # is what the discrimination check is measured against, so
         # re-running CI at a tighter specification reports a failing
         # fixture without also claiming the criteria are broken.
         report = bench.acceptance()
@@ -76,10 +90,13 @@ def row(case, stream, result):
 
 
 def main():
+    project = load_project()
+    acceptance, _, devices, _ = project
+
     matched, matched_baseline, matched_status = run_case(
-        devices.unreliable_device("B")
+        project, devices.unreliable_device("B")
     )
-    drifted, drifted_baseline, _ = run_case(devices.drifted_device("B"))
+    drifted, drifted_baseline, _ = run_case(project, devices.drifted_device("B"))
 
     print("## Acceptance criteria")
     print()
@@ -106,8 +123,7 @@ def main():
 
     # Discrimination check, always against the default limit: two
     # devices that agree have to pass it, and a device 4C out of
-    # calibration has to fail it. If both come out the same way the
-    # criteria are not measuring anything.
+    # calibration has to fail it.
     failures = []
     if matched_baseline["live"]["verdict"] != acceptance.PASS:
         failures.append(

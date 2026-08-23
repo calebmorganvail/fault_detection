@@ -15,3 +15,19 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+# The server modules import each other by plain name (import db, import
+# sync), and the tests import the two device fixture the same way. pytest
+# puts both folders on the path before importing anything, so this no
+# longer depends on a sys.path hack at the top of conftest.py that an
+# import sorter can reorder out from under it.
+pythonpath = ["server", "tests"]
+
+# These are this project's own modules, not packages from PyPI. Telling
+# the import sorters that keeps them grouped at the bottom instead of
+# being shuffled in with flask and pytest on every save.
+[tool.ruff.lint.isort]
+known-first-party = ["acceptance", "db", "devices", "server", "sync"]
+
+[tool.isort]
+known_first_party = ["acceptance", "db", "devices", "server", "sync"]

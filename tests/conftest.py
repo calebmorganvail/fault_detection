@@ -1,20 +1,14 @@
-import os
-import sys
+"""Shared fixtures.
+
+`db` and `devices` are importable because pyproject.toml puts server/
+and tests/ on pythonpath for pytest. Nothing here depends on import
+order, so an import sorter cannot break the suite.
+"""
+
+import pytest
 
 import db
 import devices
-import pytest
-
-# The server modules live in server/ and import each other by plain name,
-# so put that folder on the path before the tests import anything.
-TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_DIR = os.path.dirname(TESTS_DIR)
-
-sys.path.insert(0, os.path.join(PROJECT_DIR, "server"))
-
-# The device fixture lives next to the tests, so make sure it is
-# importable no matter where pytest was started from.
-sys.path.insert(0, TESTS_DIR)
 
 
 @pytest.fixture
