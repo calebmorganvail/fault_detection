@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 
 from flask import Flask, jsonify, request, send_from_directory
 
+import acceptance
 import db
 import sync
 
@@ -112,6 +113,7 @@ def get_status():
     return jsonify(
         {
             "simulated_temp_c": simulated_temp_c(),
+            "spec_limit_f": spec_limit_f(),
             "sensors": {
                 "A": sensor_status("A"),
                 "B": sensor_status("B"),
@@ -119,8 +121,22 @@ def get_status():
             "buffered": synchronizer.pending(),
             "synced_count": synchronizer.synced_count,
             "dropped_count": synchronizer.dropped_count,
+            "acceptance": acceptance_report(),
         }
     )
+
+
+@app.route("/api/acceptance", methods=["GET"])
+def get_acceptance():
+    """Pass/fail against the specification limit, for both streams.
+
+    This is the endpoint the automated tests assert on. `limit` and
+    `window` can be overridden per request so a run can be re-measured
+    at a different specification without restarting the server.
+    """
+    limit = request.args.get("limit", spec_limit_f(), type=float)
+    window = request.args.get("window", acceptance.window_size(), type=int)
+    return jsonify(acceptance_report(limit, window))
 
 
 @app.route("/api/simulated-temp", methods=["POST"])
@@ -132,12 +148,58 @@ def set_simulated_temp():
     return jsonify({"status": "ok"})
 
 
+@app.route("/api/spec-limit", methods=["POST"])
+def set_spec_limit():
+    """Adjust the specification limit the acceptance criteria use."""
+    data = request.get_json()
+    db.set_setting("spec_limit_f", data["limit_f"])
+    print(f"Specification limit updated to {data['limit_f']}F")
+    return jsonify({"status": "ok", "spec_limit_f": float(data["limit_f"])})
+
+
 # --- helpers --------------------------------------------------------------
 
 
 def simulated_temp_c():
     """The baseline temperature the simulation tab compares against."""
     return float(db.get_setting("simulated_temp_c", DEFAULT_SIMULATED_TEMP_C))
+
+
+def spec_limit_f():
+    """The specification limit currently in force, in degrees F."""
+    return float(db.get_setting("spec_limit_f", acceptance.default_spec_limit_f()))
+
+
+def acceptance_report(limit=None, window=None):
+    """Measure both streams against the specification limit.
+
+    simulation  sensor A against the simulated baseline
+    live        sensor A against sensor B, synchronized pairs only
+    """
+    if limit is None:
+        limit = spec_limit_f()
+    if window is None:
+        window = acceptance.window_size()
+
+    simulation_rows = db.get_simulation_readings(window)
+    live_rows = db.get_synced_readings(window)
+
+    return {
+        "spec_limit_f": limit,
+        "window": window,
+        "simulation": acceptance.evaluate(
+            acceptance.divergences(
+                simulation_rows, "sensor_temp_c", "simulated_temp_c"
+            ),
+            limit,
+            window,
+        ),
+        "live": acceptance.evaluate(
+            acceptance.divergences(live_rows, "temp_a_c", "temp_b_c"),
+            limit,
+            window,
+        ),
+    }
 
 
 def sensor_status(sensor_id):

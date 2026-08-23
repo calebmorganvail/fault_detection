@@ -1,0 +1,96 @@
+name: CI
+
+# Verification and validation on every push. The whole suite runs against
+# a fixture of two simulated devices, one deliberately unreliable, so no
+# Raspberry Pi and no DHT22 have to be plugged in for CI to have an
+# opinion about whether the system still works.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      spec_limit_f:
+        description: "Specification limit in F (average divergence over the window)"
+        required: false
+        default: "5.0"
+      window:
+        description: "How many of the most recent readings the average covers"
+        required: false
+        default: "30"
+
+# The acceptance criteria are adjustable without touching a line of test
+# code: re-run this workflow from the Actions tab with a tighter limit to
+# find out where the system actually stops passing.
+env:
+  FAULT_SPEC_LIMIT_F: ${{ github.event.inputs.spec_limit_f || '5.0' }}
+  FAULT_WINDOW: ${{ github.event.inputs.window || '30' }}
+
+jobs:
+  test:
+    name: pytest (python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # The server runs on 3.11+; the Pis are on whatever Raspberry Pi
+        # OS ships, so the range is worth keeping green.
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Run the verification and validation suite
+        run: |
+          mkdir -p reports
+          uv run --group dev pytest -v \
+            --junitxml=reports/junit-${{ matrix.python-version }}.xml
+
+      - name: Measure the acceptance criteria
+        if: always()
+        run: |
+          uv run python scripts/acceptance_report.py \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-py${{ matrix.python-version }}
+          path: reports/
+          if-no-files-found: warn
+
+  demo-stack:
+    name: docker demo stack
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start the server and two stand in sensors
+        run: docker compose --profile demo up --build --detach
+
+      - name: Verify the running stack against the specification limit
+        run: python3 scripts/verify_demo.py
+        env:
+          DEMO_URL: http://localhost:5001
+          DEMO_TIMEOUT: "180"
+
+      - name: Container logs
+        if: failure()
+        run: docker compose --profile demo logs --tail 200
+
+      - name: Tear down
+        if: always()
+        run: docker compose --profile demo down --volumes

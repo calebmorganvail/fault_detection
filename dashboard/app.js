@@ -155,6 +155,21 @@ for (var i = 0; i < tabButtons.length; i++) {
   });
 }
 
+// --- specification limit -------------------------------------------------
+
+// The dashboard applies the limit locally for the status dot, and also
+// sends it to the server so /api/status and /api/acceptance, which is
+// what the automated tests read, are judging against the same number.
+document
+  .getElementById("fault-threshold")
+  .addEventListener("change", function () {
+    fetch("/api/spec-limit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ limit_f: getThreshold() }),
+    });
+  });
+
 // --- simulated temperature input -----------------------------------------
 
 document.getElementById("sim-temp").addEventListener("change", function () {
