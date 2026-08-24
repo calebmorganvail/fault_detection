@@ -14,7 +14,9 @@ Testing 1-2 DHT22 sensors for accurate readings
   compared at the same moment in time. The idea here is that if both pis are placed in the same room and are supposed to be reading the same temp
 the divergence of the two sensors can be deteceted beyond a certain threshold.
 
+## Demo 
 
+https://github.com/user-attachments/assets/a16cfa9d-1fbf-4e29-9b01-92edd22fbb31
 
 ## Architecture
 
@@ -229,4 +231,3 @@ To re-verify at a different specification limit, run the workflow from
 the Actions tab with **Run workflow** and set the limit or the window.
 No test code changes.
 
-## Demo walkthrough
